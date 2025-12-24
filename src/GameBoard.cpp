@@ -16,6 +16,25 @@ GameBoard::GameBoard(const Size& size, uint8_t bombs_num)
   }
 }
 
+void GameBoard::resize_and_clear()
+{
+  for (int i = 0; i < _board_map.size(); i++)
+  {
+    _board_map[i].clear();
+  }
+  _board_map.clear();
+
+  for (int i = 0; i < _board_size.x; i++)
+  {
+    _board_map.emplace_back(_board_size.y);
+  }
+  _bombs_num = 0;
+  _tiles_num = _board_size.x * _board_size.y;
+  _discovered_tiles_num = 0;
+  _flagged_tiles_num = 0;
+  _current_pos = Pos(_board_size.x/2, _board_size.y/2);
+}
+
 [[nodiscard]] GameBoard::tile_type GameBoard::get_tile(uint8_t x, uint8_t y) const
 {
   if ( x < _board_size.x  && y < _board_size.y)
@@ -33,17 +52,20 @@ GameBoard::GameBoard(const Size& size, uint8_t bombs_num)
   return get_tile(pos.x, pos.y);
 }
 
-void GameBoard::set_tile(uint8_t x, uint8_t y, const tile_type& tile)
+[[nodiscard]] bool GameBoard::set_tile(uint8_t x, uint8_t y, const tile_type& tile)
 {
   if ( x < _board_size.x  && y < _board_size.y)
   {
     _board_map[x][y] = tile;
+    return true;
   }
+
+  return false;
 }
 
-void GameBoard::set_tile(const pos_type& pos, const tile_type& tile)
+[[nodiscard]] bool GameBoard::set_tile(const pos_type& pos, const tile_type& tile)
 {
-  set_tile(pos.x, pos.y, tile);
+  return set_tile(pos.x, pos.y, tile);
 }
 
 [[nodiscard]] uint8_t GameBoard::get_bombs_num() const
@@ -91,7 +113,15 @@ void GameBoard::set_flagged_tiles_num(uint16_t flag_num)
 
 [[nodiscard]] Size GameBoard::get_board_size() const
 {
-  return _board_size;
+  uint8_t x = _board_map.size();
+  uint8_t y = _board_map.empty() ? 0 : _board_map[0].size();
+
+  return Size(x,y);
+}
+
+void GameBoard::set_board_size(const Size& board_size)
+{
+  _board_size = board_size;
 }
 
 [[nodiscard]] GameBoard::pos_type GameBoard::get_current_pos() const
@@ -99,10 +129,12 @@ void GameBoard::set_flagged_tiles_num(uint16_t flag_num)
   return _current_pos;
 }
 
-void GameBoard::set_current_pos(const pos_type& pos)
+[[nodiscard]] bool GameBoard::set_current_pos(const pos_type& pos)
 {
   if (pos.x < _board_size.x && pos.y < _board_size.y)
   {
     _current_pos = pos;
+    return true;
   }
+  return false;
 }

@@ -41,7 +41,8 @@ TEST( GameBoard, SetTile)
 
   std::unique_ptr<IGameBoard> board(std::make_unique<GameBoard>(board_size, bombs_num));
   const Tile tile_test(TileType::bomb, TileStatus::hidden);
-  board->set_tile(pos_within_borad, tile_test);
+  ASSERT_TRUE(board->set_tile(pos_within_borad, tile_test));
+  ASSERT_FALSE(board->set_tile(pos_out_of_board, tile_test));
 
   ASSERT_EQ(board->get_tile(pos_within_borad), tile_test);
   ASSERT_EQ(board->get_tile(pos_out_of_board), Tile());
@@ -57,10 +58,10 @@ TEST (GameBoard, BoardParametersSetAndGet)
   const Pos pos_within_borad(3,3);
   const Pos pos_out_of_board(6,6);
 
-  board->set_current_pos(pos_within_borad);
+  ASSERT_TRUE(board->set_current_pos(pos_within_borad));
   ASSERT_EQ(board->get_current_pos(), pos_within_borad);
 
-  board->set_current_pos(pos_out_of_board);
+  ASSERT_FALSE(board->set_current_pos(pos_out_of_board));
   ASSERT_EQ(board->get_current_pos(), pos_within_borad);
 
   //discovered tiles num
@@ -80,4 +81,28 @@ TEST (GameBoard, BoardParametersSetAndGet)
   constexpr uint16_t flagged_tiles_num_too_much = 120;
   board->set_flagged_tiles_num(flagged_tiles_num_too_much);
   ASSERT_EQ(board->get_flagged_tiles_num(), flagged_tiles_num);
+}
+
+TEST ( GameBoard, ResizeAndClear )
+{
+  constexpr uint8_t bombs_num = 10;
+  const Size board_size(6,6);
+
+  std::unique_ptr<IGameBoard> board(std::make_unique<GameBoard>(board_size, bombs_num));
+
+  const Size new_board_size(10,10);
+  board->set_board_size(new_board_size);
+  board->set_discovered_tiles_num(20);
+  board->set_flagged_tiles_num(20);
+  ASSERT_EQ(board->get_board_size(), board_size);
+
+  const Pos new_pos(5,5);
+  const uint16_t new_tiles_num = new_board_size.x * new_board_size.y;
+  board->resize_and_clear();
+  ASSERT_EQ(board->get_board_size(), new_board_size);
+  ASSERT_EQ(board->get_bombs_num(), 0);
+  ASSERT_EQ(board->get_current_pos(), new_pos);
+  ASSERT_EQ(board->get_discovered_tiles_num(), 0);
+  ASSERT_EQ(board->get_flagged_tiles_num(), 0);
+  ASSERT_EQ(board->get_tiles_num(), new_tiles_num); 
 }

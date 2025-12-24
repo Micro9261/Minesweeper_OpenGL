@@ -16,6 +16,11 @@ enum class TileType
   bombs_8
 };
 
+namespace GameBoardUtil {
+  TileType bombs_num_to_tileType(uint8_t bombs_num);
+
+  uint8_t tileType_to_bomb_num(const TileType& type);
+};
 enum class TileStatus
 {
   hidden,
@@ -25,20 +30,20 @@ enum class TileStatus
 
 struct Tile
 {
-  TileType tile_type;
-  TileStatus tile_status;
+  TileType type;
+  TileStatus status;
 
   Tile()
     : Tile(TileType::undefined, TileStatus::hidden)
   {}
 
   Tile(const TileType& type, const TileStatus& status)
-    : tile_type(type), tile_status(status)
+    : type(type), status(status)
   {}
 
   bool operator==(const Tile& tile) const
   {
-    return (tile.tile_type == tile_type && tile.tile_status == tile_status);
+    return (tile.type == type && tile.status == status);
   }
 
   bool operator!=(const Tile& tile) const
@@ -110,10 +115,12 @@ struct Size
 class IGameBoard
 {
 public:
+  virtual void resize_and_clear() = 0;
+
   [[nodiscard]] virtual Tile get_tile(uint8_t x, uint8_t y) const = 0;
   [[nodiscard]] virtual Tile get_tile(const Pos& pos) const = 0;
-  virtual void set_tile(uint8_t x, uint8_t y, const Tile& tile) = 0;
-  virtual void set_tile(const Pos& pos, const Tile& tile) = 0;
+  [[nodiscard]] virtual bool set_tile(uint8_t x, uint8_t y, const Tile& tile) = 0;
+  [[nodiscard]] virtual bool set_tile(const Pos& pos, const Tile& tile) = 0;
 
   [[nodiscard]] virtual uint8_t get_bombs_num() const = 0;
   virtual void set_bombs_num(uint8_t bombs_num) = 0;
@@ -125,10 +132,12 @@ public:
   virtual void set_flagged_tiles_num(uint16_t flag_num) = 0;
   
   [[nodiscard]] virtual uint16_t get_tiles_num() const = 0;
+
   [[nodiscard]] virtual Size get_board_size() const = 0;
+  virtual void set_board_size(const Size& board_size) = 0;
 
   [[nodiscard]] virtual Pos get_current_pos() const = 0;
-  virtual void set_current_pos(const Pos& pos) = 0;
+  [[nodiscard]] virtual bool set_current_pos(const Pos& pos) = 0;
 
   virtual ~IGameBoard() = default;
 };
