@@ -1,8 +1,8 @@
 #pragma once
-#include "IGameLogic.hpp"
+#include "interface/IGameLogic.hpp"
 #include <memory>
 
-#include "IGameBoard.hpp"
+#include "interface/IGameBoard.hpp"
 
 class GameLogic : public IGameLogic
 {
@@ -33,6 +33,7 @@ public:
   [[nodiscard]] bool flag_tile(uint8_t x, uint8_t y) override;
   
   [[nodiscard]] GameStatus get_status() const override;
+  void set_status_lose() override;
   [[nodiscard]] const std::weak_ptr<IGameBoard> get_board() const override;
 
   ~GameLogic() = default;

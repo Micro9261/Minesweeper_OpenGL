@@ -41,6 +41,7 @@ public:
   [[nodiscard]] virtual bool flag_tile(uint8_t x, uint8_t y) = 0;
 
   [[nodiscard]] virtual GameStatus get_status() const = 0;
+  virtual void set_status_lose() = 0;
   [[nodiscard]] virtual const std::weak_ptr<IGameBoard> get_board() const = 0;
 
   virtual ~IGameLogic() = default;

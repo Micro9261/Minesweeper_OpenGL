@@ -1,4 +1,4 @@
-#include "GameLogic.hpp"
+#include "impl/GameLogic.hpp"
 #include <random>
 #include <vector>
 
@@ -67,6 +67,35 @@ void GameLogic::set_difficulty_level(const DifficultyLevel& diff)
 {
   _difficulty = diff;
   _status = GameStatus::preparing;
+
+  uint8_t bombs_num = 0;
+  Size size;
+  
+  switch (_difficulty)
+  {
+  case DifficultyLevel::easy :
+    bombs_num = 10;
+    size = Size(9, 9);
+    break;
+  
+  case DifficultyLevel::medium :
+    bombs_num = 40;
+    size = Size(16, 16);
+    break;
+  
+  case DifficultyLevel::hard :
+    bombs_num = 99;
+    size = Size(24, 24);
+    break;
+  
+  default:
+    //Params will be set in set_custom_params()
+    break;
+  }
+
+  _board_ptr->set_board_size(size);
+  _board_ptr->resize_and_clear();
+  _board_ptr->set_bombs_num(bombs_num);
 }
 
 void GameLogic::set_custom_params(const Size& size, uint8_t bombs_num)
@@ -229,28 +258,29 @@ void GameLogic::armor(uint8_t x, uint8_t y)
     Tile tile = _board_ptr->get_tile(pos);
     if (TileStatus::hidden == tile.status)
     {
+      tile.status = TileStatus::discovered;
+      _board_ptr->set_tile(pos, tile);
       if (TileType::bomb == tile.type)
       {
         _status = GameStatus::lose;
+        reveal_bomb_tails();
       }
       else if (TileType::blank == tile.type)
       {
         reveal_hidden_tails(pos);
       }
-      else
-      {
-        reveal_check_tail(pos);
-      }
-      tile.status = TileStatus::discovered;
-      _board_ptr->set_tile(pos, tile);
       _board_ptr->set_discovered_tiles_num(_board_ptr->get_discovered_tiles_num() + 1);
-      
-      const uint16_t known_tiles_num = _board_ptr->get_discovered_tiles_num()
+    }
+    else if (TileStatus::discovered == tile.status && TileType::blank != tile.type
+      && TileType::undefined != tile.type)
+    {
+      reveal_check_tail(pos);
+    }
+    const uint16_t known_tiles_num = _board_ptr->get_discovered_tiles_num()
        + _board_ptr->get_bombs_num();
-      if (known_tiles_num >= _board_ptr->get_tiles_num())
-      {
-        _status = GameStatus::win;
-      }
+    if (known_tiles_num >= _board_ptr->get_tiles_num())
+    {
+      _status = GameStatus::win;
     }
   }
   else if (GameStatus::in_progress == _status)
@@ -295,6 +325,11 @@ void GameLogic::armor(uint8_t x, uint8_t y)
 [[nodiscard]] GameStatus GameLogic::get_status() const
 {
   return _status;
+}
+
+void GameLogic::set_status_lose()
+{
+  _status = GameStatus::lose;
 }
 
 [[nodiscard]] const std::weak_ptr<IGameBoard> GameLogic::get_board() const
@@ -371,9 +406,7 @@ void GameLogic::reveal_check_tail(const Pos& check_pos)
 
   if (bombs_expected == flag_count)
   {
-    _board_ptr->set_discovered_tiles_num(_board_ptr->get_discovered_tiles_num()
-      + hidden_tiles.size());
-    
+    uint8_t tiles_count = static_cast<uint8_t>(hidden_tiles.size());
     while ( !hidden_tiles.empty() )
     {
       const Pos pos = hidden_tiles.back();
@@ -385,8 +418,11 @@ void GameLogic::reveal_check_tail(const Pos& check_pos)
       if (TileType::blank == reveal_tile.type)
       {
         reveal_hidden_tails(pos);
+        tiles_count--;
       }
     }
+    _board_ptr->set_discovered_tiles_num(_board_ptr->get_discovered_tiles_num()
+      + tiles_count);
   }
 }
 
