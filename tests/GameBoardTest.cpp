@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "GameBoard.hpp"
-#include "IGameBoard.hpp"
+#include "impl/GameBoard.hpp"
+#include "interface/IGameBoard.hpp"
 #include <memory>
 #include <cinttypes>
 

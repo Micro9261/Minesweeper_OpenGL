@@ -1,4 +1,4 @@
-#include "GameBoard.hpp"
+#include "impl/GameBoard.hpp"
 
 GameBoard::GameBoard()
   : GameBoard({0,0}, 0)

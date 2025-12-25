@@ -1,5 +1,5 @@
 #pragma once
-#include "IGameBoard.hpp"
+#include "interface/IGameBoard.hpp"
 #include <vector>
 
 class GameBoard : public IGameBoard

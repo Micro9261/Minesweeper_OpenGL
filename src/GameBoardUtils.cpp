@@ -1,4 +1,4 @@
-#include "IGameBoard.hpp"
+#include "interface/IGameBoard.hpp"
 
 namespace GameBoardUtil {
   TileType bombs_num_to_tileType(uint8_t bombs_num)
