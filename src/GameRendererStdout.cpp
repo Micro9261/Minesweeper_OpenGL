@@ -1,4 +1,4 @@
-#include "GameRendererStdout.hpp"
+#include "impl/GameRendererStdout.hpp"
 #include <iostream>
 #include <string>
 #include <windows.h>
@@ -10,9 +10,8 @@ GameRendererStdout::GameRendererStdout()
   //Nothing
 }
 
-void GameRendererStdout::init(const Size& board_size)
+void GameRendererStdout::init()
 {
-  _board_size = board_size;
   change_color(7,0); //default
 }
 
@@ -27,7 +26,8 @@ void GameRendererStdout::render()
     return;
   
   std::shared_ptr<IGameBoard> board = _board_ptr.lock();
-  std::cout << "*** Minesweeper STDOUT ***\n";
+  _board_size = board->get_board_size();
+  render_title();
   std::cout << std::string(_board_size.x + 2, '#') << std::endl;
   
   for (uint8_t x = 0; x < _board_size.x; x++)
@@ -45,7 +45,7 @@ void GameRendererStdout::render()
 
       if (TileStatus::hidden == tile.status)
       {
-        std::cout << '-';
+          std::cout << '-';
       }
       else if (TileStatus::discovered == tile.status)
       {
@@ -55,7 +55,14 @@ void GameRendererStdout::render()
         }
         else if (TileType::bomb == tile.type)
         {
+          if (pos == board->get_current_pos())
+          {
+            change_color(7,0);
+          }
+          else
+          
           std::cout << "B";
+          change_color(7,0);
         }
         else 
         {
@@ -64,7 +71,16 @@ void GameRendererStdout::render()
       }
       else
       {
-        std::cout << "U";
+        if (pos == board->get_current_pos())
+        {
+          change_color(15,6);
+        }
+        else
+        {
+          change_color(4,4);
+        }
+        std::cout << "F";
+        change_color(7,0);
       }
 
       if (pos == board->get_current_pos())
@@ -80,16 +96,32 @@ void GameRendererStdout::render()
 
 void GameRendererStdout::render_win()
 {
-  std::cout << "*** Minesweeper STDOUT ***\n";
+  render_title();
   std::cout << "\tYou WIN!\n";
   std::cout << std::string(_board_size.x + 2, '#') << std::endl;
 }
 
 void GameRendererStdout::render_lose()
 {
-  std::cout << "*** Minesweeper STDOUT ***\n";
+  render_title();
   std::cout << "\tYou LOSE!\n";
   std::cout << std::string(_board_size.x + 2, '#') << std::endl;
+}
+
+void GameRendererStdout::render_difficulty_selection()
+{
+  render_title();
+  std::cout << "Choose difficulty level:\n";
+  std::cout << "1) easy\n";
+  std::cout << "2) medium\n";
+  std::cout << "3) hard\n";
+  std::cout << "4) custom\n\n" << std::endl;
+}
+
+void GameRendererStdout::render_ask_start()
+{
+  render_title();
+  std::cout << "\nType S to start, Q to quit\n" << std::endl;
 }
 
 void GameRendererStdout::clear()
@@ -104,4 +136,9 @@ void GameRendererStdout::change_color(int text_col, int bg_col)
 {
   HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
   SetConsoleTextAttribute(hConsole, (bg_col << 4) | text_col);
+}
+
+void GameRendererStdout::render_title()
+{
+  std::cout << "*** Minesweeper STDOUT ***\n";
 }
