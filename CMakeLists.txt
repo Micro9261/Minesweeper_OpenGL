@@ -28,7 +28,7 @@ set(SFML_BUILD_DOC OFF)
 FetchContent_Declare(
   SFML
   GIT_REPOSITORY https://github.com/SFML/SFML.git
-  GIT_TAG 3.0.2
+  GIT_TAG 2.6.1
 )
 FetchContent_MakeAvailable(SFML)
 
@@ -58,7 +58,7 @@ target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR})
 FetchContent_Declare(
   imgui_sfml
   GIT_REPOSITORY https://github.com/SFML/imgui-sfml.git
-  GIT_TAG v3.0
+  GIT_TAG v2.6.1
 )
 FetchContent_Populate(imgui_sfml)
 
@@ -79,6 +79,22 @@ target_link_libraries(imgui-sfml PUBLIC
   sfml-window
   sfml-system
 )
+
+# ==========================
+# Fetch FreeType (static)
+# ==========================
+set(FT_DISABLE_ZLIB ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_BZIP2 ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_PNG ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+    freetype
+    GIT_REPOSITORY https://gitlab.freedesktop.org/freetype/freetype.git
+    GIT_TAG VER-2-13-2   # stable version (recommended)
+)
+
+FetchContent_MakeAvailable(freetype)
 
 #============================================================================
 # OpenGL Configuration
@@ -134,9 +150,22 @@ target_link_libraries(${PROJECT_NAME}
   sfml-system
   imgui
   imgui-sfml
-  ${OPENGL_gl_LIBRARY}
-  # glm
-  GLUT::GLUT
+  opengl32
+  glu32
+  freetype
+)
+
+#============================================================================
+# Copy assets to build dir
+#============================================================================
+
+set(ASSETS_DIR ${CMAKE_SOURCE_DIR}/assets)
+
+add_custom_command(
+  TARGET ${PROJECT_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${ASSETS_DIR}
+          $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
 )
 
 #============================================================================
@@ -158,6 +187,14 @@ add_executable(GameBoardTest tests/GameBoardTest.cpp ${PROJECT_SOURCES})
 target_link_libraries(
   GameBoardTest
   GTest::gtest_main
+  sfml-graphics
+  sfml-window
+  sfml-system
+  imgui
+  imgui-sfml
+  opengl32
+  glu32
+  freetype
 )
 
 include(GoogleTest)
