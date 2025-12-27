@@ -1,5 +1,5 @@
 #pragma once
-#include "interface/IGameRenderer.hpp"
+#include "interface/IGameRenderer3D.hpp"
 #include <map>
 #include <string>
 #include <GL/glu.h>
@@ -20,21 +20,24 @@ struct Glyph {
     int advance;
 };
 
-class GameRenderer3D final : public IGameRenderer
+class GameRendererSFML final : public IGameRenderer3D
 {
 public:
-  GameRenderer3D(sf::RenderWindow& window);
-  GameRenderer3D(sf::RenderWindow& window, float tile_edge, float board_edge, float board_height);
+  GameRendererSFML(sf::RenderWindow& window);
+  GameRendererSFML(sf::RenderWindow& window, float tile_edge, float board_edge, float board_height);
   
   void init() override;
   void set_board(const std::weak_ptr<IGameBoard> && board_ptr) override;
   void render() override;
   void render_win() override;
   void render_lose() override;
-  void render_difficulty_selection() override;
+  void render_difficulty_selection(const DifficultyLevel& diff_level) override;
   void render_ask_start() override;
   void clear() override;
 
+  void render_view(const ViewParams& view) override;
+
+  ~GameRendererSFML() = default;
 private:
   Size _board_size;
   std::weak_ptr<IGameBoard> _board_ptr;
@@ -43,6 +46,7 @@ private:
   std::map<char, Glyph> _glyphs;
   FT_Library _ft_lib;
   FT_Face _ft_face;
+  sf::Font _font;
 
   //Board params
   float _font_width; //0.10f
@@ -63,6 +67,6 @@ private:
   void _load_fonts(const char * path);
   void _draw_selection(const Pos& pos);
   void _draw_tile(const Pos& pos, const Tile& tile);
-  void _draw_flag(const Pos& pos);
+  void _draw_flag(float pos_x, float pos_z);
   void _draw_board(uint8_t tiles_x, uint8_t tiles_z);
 };

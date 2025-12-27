@@ -1,33 +1,38 @@
-#include "impl/GameRenderer3D.hpp"
+#include "impl/GameRendererSFML.hpp"
 #include <memory>
 #include <iostream>
+#include <vector>
 
-GameRenderer3D::GameRenderer3D(sf::RenderWindow& window)
+GameRendererSFML::GameRendererSFML(sf::RenderWindow& window)
   : _window(window)
 {
+  _font_width = 0.10f;
+  _font_height = 0.14f;
+  _board_edge = 0.05f;
 
+  //Tile params
+  _tile_edge = 0.2f;
+  _tile_slope = 0.03f;
+  _tile_top_edge_offset = 0.01f;
+  _tile_edge_offset = 0.01f;
 }
 
-GameRenderer3D::GameRenderer3D(sf::RenderWindow& window, float _tile_edge, float _board_edge, float board_height)
+GameRendererSFML::GameRendererSFML(sf::RenderWindow& window, float _tile_edge, float _board_edge, float board_height)
   : _window(window)
 {
 
 }
   
-void GameRenderer3D::init()
+void GameRendererSFML::init()
 {
   _load_fonts("assets/arial.ttf");
+  _font.loadFromFile("assets/arial.ttf");
   glClearColor(0.7f,0.7f,0.7f,0.f);
   clear();
   int width = _window.getSize().x;
   int height = _window.getSize().y;
 
-  glViewport(
-    0,
-    0,
-    width,
-    height
-  );
+  glViewport(0, 0, width, height);
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -35,46 +40,186 @@ void GameRenderer3D::init()
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-  glTranslatef(0.f, 0.f, -3.f);
-  glRotatef(90, 1.f, 0.f, 0.f);
 }
 
-void GameRenderer3D::set_board(const std::weak_ptr<IGameBoard> && board_ptr) 
+void GameRendererSFML::set_board(const std::weak_ptr<IGameBoard> && board_ptr) 
 {
   _board_ptr = std::move(board_ptr);
 }
 
-void GameRenderer3D::render() 
+void GameRendererSFML::render() 
 {
-  _draw_background(_window, sf::Clock().getElapsedTime().asSeconds());
+  if (_board_ptr.expired())
+    return;
+
+   std::shared_ptr<IGameBoard> board = _board_ptr.lock();
+  _board_size = board->get_board_size();
+
+  _draw_board(_board_size.x, _board_size.y);
+  _draw_selection(board->get_current_pos());
+
+  for (uint8_t x = 0; x < _board_size.x; x++)
+  {
+    for (uint8_t y = 0; y < _board_size.y; y++)
+    {
+      const Pos pos(y,x);
+      const Tile tile = board->get_tile(pos);
+      _draw_tile(pos, tile);
+      
+    }
+  }
 }
 
-void GameRenderer3D::render_win() 
+void GameRendererSFML::render_win() 
 {
-  _draw_background(_window, sf::Clock().getElapsedTime().asSeconds());
+  _window.pushGLStates();
+  int width = _window.getSize().x;
+  int height = _window.getSize().y;
+  
+  sf::Text text("You WIN!", _font);
+  text.setFillColor(sf::Color::Magenta);
+  text.setStyle(sf::Text::Bold);
+  sf::Vector2f text_pos(static_cast<float>(width)/2.f, static_cast<float>(height)/2.f);
+  text.setPosition(text_pos);
+   
+  _window.draw(text);
+
+  _window.popGLStates();
 }
 
-void GameRenderer3D::render_lose() 
+void GameRendererSFML::render_lose() 
 {
-  _draw_background(_window, sf::Clock().getElapsedTime().asSeconds());
+  _window.pushGLStates();
+  int width = _window.getSize().x;
+  int height = _window.getSize().y;
+  
+  sf::Text text("You LOSE!", _font);
+  text.setFillColor(sf::Color::Magenta);
+  text.setStyle(sf::Text::Bold);
+  sf::Vector2f text_pos(static_cast<float>(width)/2.f, static_cast<float>(height)/2.f);
+  text.setPosition(text_pos);
+   
+  _window.draw(text);
+
+  _window.popGLStates();
 }
 
-void GameRenderer3D::render_difficulty_selection() 
+void GameRendererSFML::render_difficulty_selection(const DifficultyLevel& diff_level) 
 {
-  _draw_background(_window, sf::Clock().getElapsedTime().asSeconds());
+  _window.pushGLStates();
+  int width = _window.getSize().x;
+  int height = _window.getSize().y;
+  const float middle_x = static_cast<float>(width) / 2.f;
+  const float middle_y = static_cast<float>(height) / 2.f;
+  const float options_spacing = 50.f;
+  const float lines_num = 6.f;
+  const float start_x = middle_x - 100.f;
+  const float start_y = middle_y - options_spacing * (lines_num / 2.f);
+
+  
+  std::vector<std::pair<DifficultyLevel, sf::Text> > option_vec;
+  //Prepare texts
+
+  sf::Text text("Difficulty selection", _font);
+  text.setFillColor(sf::Color::White);
+  text.setStyle(sf::Text::Bold);
+  sf::Vector2f text_pos(start_x, start_y);
+  text.setPosition(text_pos);
+
+  const float selection_width = 100.f;
+  const float selection_height = options_spacing - 10.f;
+  sf::RectangleShape selection({selection_width, selection_height});
+  selection.setFillColor(sf::Color::Blue);
+
+  option_vec.emplace_back(DifficultyLevel::easy, sf::Text("Easy", _font) );
+  option_vec.emplace_back(DifficultyLevel::medium, sf::Text("Medium", _font) );
+  option_vec.emplace_back(DifficultyLevel::hard, sf::Text("Hard", _font) );
+  option_vec.emplace_back(DifficultyLevel::custom, sf::Text("Custom", _font) );
+  option_vec.emplace_back(DifficultyLevel::quit_opt, sf::Text("Quit", _font) );
+
+  std::vector<std::pair<DifficultyLevel, sf::Text> >::iterator iter = option_vec.begin();
+  float pos_y = start_y + options_spacing;
+  while (iter != option_vec.end())
+  {
+    sf::Text & elem = iter->second;
+    elem.setStyle(sf::Text::Bold);
+    sf::Vector2f pos(start_x, pos_y);
+    elem.setPosition(pos);
+    pos_y += options_spacing;
+
+    if (diff_level != iter->first)
+    {
+      elem.setFillColor(sf::Color::Blue);
+    }
+    else
+    {
+      selection.setPosition(pos);
+      elem.setFillColor(sf::Color::White);
+    }
+    iter++;
+  }
+
+  _window.draw(text);
+  _window.draw(selection);
+
+  iter = option_vec.begin();
+  while(iter != option_vec.end())
+  {
+    _window.draw(iter->second);
+    iter++;
+  }
+
+  _window.popGLStates();
 }
 
-void GameRenderer3D::render_ask_start() 
+void GameRendererSFML::render_ask_start() 
 {
-  _draw_background(_window, sf::Clock().getElapsedTime().asSeconds());
+  _window.pushGLStates();
+  int width = _window.getSize().x;
+  int height = _window.getSize().y;
+  const float middle_x = static_cast<float>(width) / 2.f;
+  const float middle_y = static_cast<float>(height) / 2.f;
+  const float options_spacing = 50.f;
+  const float lines_num = 3.f;
+  const float start_x = middle_x - 100.f;
+  const float start_y = middle_y - options_spacing * (lines_num / 2.f);
+  
+  sf::Text text("Do you wish to start?", _font);
+  text.setFillColor(sf::Color::Magenta);
+  text.setStyle(sf::Text::Bold);
+  sf::Vector2f text_pos(static_cast<float>(width)/2.f - 100.f, static_cast<float>(height)/2.f - 100.f);
+  text.setPosition(text_pos);
+
+  sf::Text option_text("Click 'S' to start, 'Q' to go back to difficulty selection", _font);
+  option_text.setFillColor(sf::Color::Magenta);
+  option_text.setStyle(sf::Text::Bold);
+  text_pos = sf::Vector2f(static_cast<float>(width)/2.f - 300.f, static_cast<float>(height)/2.f);
+  option_text.setPosition(text_pos); 
+
+  _window.draw(text);
+  _window.draw(option_text);
+
+  _window.popGLStates();
 }
 
-void GameRenderer3D::clear()
+void GameRendererSFML::render_view(const ViewParams& view)
+{
+  glLoadIdentity();
+  ViewParams north_of_camera({view.get_distance(), view.get_theta(), view.get_phi() + 0.01f});
+  gluLookAt(view.get_x(), view.get_y(), view.get_z(),
+    0.0, 0.0, 0.0,
+    north_of_camera.get_x(), north_of_camera.get_y(), north_of_camera.get_z());
+}
+
+//Private
+
+void GameRendererSFML::clear()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  _draw_background(_window, sf::Clock().getElapsedTime().asSeconds());
 }
 
-void GameRenderer3D::_draw_background(sf::RenderWindow& window, float timeSec)
+void GameRendererSFML::_draw_background(sf::RenderWindow& window, float timeSec)
 {
     // Static shader and quad so we compile/create once
     static sf::Shader shader;
@@ -192,7 +337,7 @@ void GameRenderer3D::_draw_background(sf::RenderWindow& window, float timeSec)
     window.popGLStates();
 }
 
-void GameRenderer3D::_load_fonts(const char* path)
+void GameRendererSFML::_load_fonts(const char* path)
 {
     if (FT_Init_FreeType(&_ft_lib))
     {
@@ -249,7 +394,7 @@ void GameRenderer3D::_load_fonts(const char* path)
     FT_Done_FreeType(_ft_lib);
 }
 
-void GameRenderer3D::_draw_text3D(char c, float x, float y)
+void GameRendererSFML::_draw_text3D(char c, float x, float y)
 {
   Glyph& g = _glyphs[c];
 
@@ -276,7 +421,7 @@ void GameRenderer3D::_draw_text3D(char c, float x, float y)
   glDisable(GL_BLEND);
 }
 
-void GameRenderer3D::_draw_selection(const Pos& pos)
+void GameRendererSFML::_draw_selection(const Pos& pos)
 {
   const float start_x = -_board_start_x + _board_edge + pos.x * _tile_edge;
   const float start_z = -_board_start_z + _board_edge + pos.y * _tile_edge;
@@ -290,7 +435,7 @@ void GameRenderer3D::_draw_selection(const Pos& pos)
   glEnd();
 }
 
-void GameRenderer3D::_draw_tile(const Pos& pos, const Tile& tile)
+void GameRendererSFML::_draw_tile(const Pos& pos, const Tile& tile)
 {
   const float start_x = -_board_start_x + _board_edge + pos.x * _tile_edge + _tile_edge_offset;
   const float start_z = -_board_start_z + _board_edge + pos.y * _tile_edge + _tile_edge_offset;
@@ -341,10 +486,10 @@ void GameRenderer3D::_draw_tile(const Pos& pos, const Tile& tile)
 
     if (TileStatus::flagged == tile.status)
     {
-      _draw_flag(Pos(start_top_x, start_top_z));
+      _draw_flag(start_top_x, start_top_z);
     }
   }
-  else if (TileStatus::discovered == tile.status)
+  else if (TileStatus::discovered == tile.status && TileType::bomb != tile.type)
   {
     glBegin(GL_QUADS);
       glColor3f(0.561f, 0.737f, 0.561f);
@@ -352,7 +497,6 @@ void GameRenderer3D::_draw_tile(const Pos& pos, const Tile& tile)
       glVertex3f(start_x + tile_edge_draw, 0.001f, start_z);
       glVertex3f(start_x + tile_edge_draw, 0.001f, start_z + tile_edge_draw);
       glVertex3f(start_x, 0.001f, start_z + tile_edge_draw);
-
     glEnd();
     char num = GameBoardUtil::tileType_to_bomb_num(tile.type);
     if (0 != num)
@@ -360,18 +504,27 @@ void GameRenderer3D::_draw_tile(const Pos& pos, const Tile& tile)
       //From binary number to ASCII (add 0x30)
       _draw_text3D(num + 0x30, start_x, start_z);
     }
+  } else if (TileStatus::discovered == tile.status && TileType::bomb == tile.type)
+  {
+    glBegin(GL_QUADS);
+      glColor3f(1.f, 0.f, 0.f);
+      glVertex3f(start_x, 0.001f, start_z);
+      glVertex3f(start_x + tile_edge_draw, 0.001f, start_z);
+      glVertex3f(start_x + tile_edge_draw, 0.001f, start_z + tile_edge_draw);
+      glVertex3f(start_x, 0.001f, start_z + tile_edge_draw);
+    glEnd();
   }
 }
 
-void GameRenderer3D::_draw_flag(const Pos& pos)
+void GameRendererSFML::_draw_flag(float pos_x, float pos_z)
 {
   const float flag_width = 0.05f;
   const float flag_heigth = 0.025f;
   const float stick_heigth = 0.07f;
   const float stick_width = 0.02f;
 
-  const float start_flag_x = pos.x + (_tile_top_edge - flag_width)/2.f;
-  const float start_flag_z = pos.y + (_tile_top_edge - stick_heigth)/2.f;
+  const float start_flag_x = pos_x + (_tile_top_edge - flag_width)/2.f;
+  const float start_flag_z = pos_z + (_tile_top_edge - stick_heigth)/2.f;
   const float flag_tile_height = _tile_slope + 0.001f;
 
   glBegin(GL_QUADS);
@@ -392,16 +545,18 @@ void GameRenderer3D::_draw_flag(const Pos& pos)
   glEnd();
 }
 
-void GameRenderer3D::_draw_board(uint8_t tiles_x, uint8_t tiles_z)
+void GameRendererSFML::_draw_board(uint8_t tiles_x, uint8_t tiles_z)
 {
     const float _board_edge = 0.05f;
 
     const float board_width = _board_edge*2.f + tiles_x * _tile_edge;
     const float board_height = _board_edge*2.f + tiles_z * _tile_edge;
-
     const float start_x = board_width / 2.f;
     const float start_z = board_height / 2.f;
     const float board_layer_height = 0.05f;
+
+    _board_start_x = start_x;
+    _board_start_z = start_z;
 
     glBegin(GL_QUADS);
 

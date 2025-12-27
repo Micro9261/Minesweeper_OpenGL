@@ -92,6 +92,7 @@ void GameRendererStdout::render()
   }
   
   std::cout << std::string(_board_size.x + 2, '#') << std::endl;
+  std::cout << "Tiles discovered:" << board->get_discovered_tiles_num() << std::endl;
 }
 
 void GameRendererStdout::render_win()
@@ -108,7 +109,7 @@ void GameRendererStdout::render_lose()
   std::cout << std::string(_board_size.x + 2, '#') << std::endl;
 }
 
-void GameRendererStdout::render_difficulty_selection()
+void GameRendererStdout::render_difficulty_selection(const DifficultyLevel& /* diff_level */)
 {
   render_title();
   std::cout << "Choose difficulty level:\n";
