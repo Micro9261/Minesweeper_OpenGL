@@ -413,12 +413,21 @@ void GameLogic::reveal_check_tail(const Pos& check_pos)
       hidden_tiles.pop_back();
 
       Tile reveal_tile = _board_ptr->get_tile(pos);
+      if (TileStatus::discovered == reveal_tile.status)
+      {
+        tiles_count--;
+        continue;
+      }
       reveal_tile.status = TileStatus::discovered;
       _board_ptr->set_tile(pos, reveal_tile);
       if (TileType::blank == reveal_tile.type)
       {
         reveal_hidden_tails(pos);
-        tiles_count--;
+      }
+      else if (TileType::bomb == reveal_tile.type)
+      {
+        _status = GameStatus::lose;
+        reveal_bomb_tails();
       }
     }
     _board_ptr->set_discovered_tiles_num(_board_ptr->get_discovered_tiles_num()

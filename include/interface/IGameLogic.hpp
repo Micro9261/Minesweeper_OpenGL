@@ -8,8 +8,13 @@ enum class DifficultyLevel
   easy,
   medium,
   hard,
-  custom
+  custom,
+  waiting,
+  quit_opt
 };
+
+DifficultyLevel& operator++(DifficultyLevel& oryg);
+DifficultyLevel& operator--(DifficultyLevel& oryg);
 
 enum class GameStatus
 {
