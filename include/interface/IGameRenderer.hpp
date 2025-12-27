@@ -12,7 +12,7 @@ public:
   virtual void render_win() = 0;
   virtual void render_lose() = 0;
   virtual void render_difficulty_selection(const DifficultyLevel& diff_level) = 0;
-  virtual void render_ask_start() = 0;
+  virtual void render_ask_start(const StartState& state) = 0;
   virtual void clear() = 0;
 
   virtual ~IGameRenderer() = default;

@@ -17,8 +17,6 @@ struct ViewParams
   
   ViewParams(std::initializer_list<float> ang)
   {
-    
-    
     std::initializer_list<float>::iterator iter = ang.begin();
     uint8_t index = 0;
     while (index < 3)

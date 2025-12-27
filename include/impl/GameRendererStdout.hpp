@@ -12,7 +12,7 @@ public:
   void render_win() override;
   void render_lose() override;
   void render_difficulty_selection(const DifficultyLevel&) override;
-  void render_ask_start() override;
+  void render_ask_start(const StartState&) override;
   void clear() override;
 
 private:

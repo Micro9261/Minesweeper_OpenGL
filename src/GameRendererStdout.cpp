@@ -119,7 +119,7 @@ void GameRendererStdout::render_difficulty_selection(const DifficultyLevel& /* d
   std::cout << "4) custom\n\n" << std::endl;
 }
 
-void GameRendererStdout::render_ask_start()
+void GameRendererStdout::render_ask_start(const StartState& /* state */)
 {
   render_title();
   std::cout << "\nType S to start, Q to quit\n" << std::endl;

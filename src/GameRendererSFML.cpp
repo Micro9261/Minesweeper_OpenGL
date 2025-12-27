@@ -49,39 +49,38 @@ void GameRendererSFML::set_board(const std::weak_ptr<IGameBoard> && board_ptr)
 
 void GameRendererSFML::render() 
 {
-  if (_board_ptr.expired())
-    return;
-
-   std::shared_ptr<IGameBoard> board = _board_ptr.lock();
-  _board_size = board->get_board_size();
-
-  _draw_board(_board_size.x, _board_size.y);
-  _draw_selection(board->get_current_pos());
-
-  for (uint8_t x = 0; x < _board_size.x; x++)
-  {
-    for (uint8_t y = 0; y < _board_size.y; y++)
-    {
-      const Pos pos(y,x);
-      const Tile tile = board->get_tile(pos);
-      _draw_tile(pos, tile);
-      
-    }
-  }
+  _draw_filled_board();
+  _window.pushGLStates();
+  _draw_info(true);
+  _window.popGLStates();
 }
 
 void GameRendererSFML::render_win() 
 {
+  _draw_filled_board();
   _window.pushGLStates();
   int width = _window.getSize().x;
   int height = _window.getSize().y;
+  const float middle_x = static_cast<float>(width) / 2.f;
+  const float middle_y = static_cast<float>(height) / 2.f;
+  const float options_spacing = 50.f;
+  const float lines_num = 1.f;
+  const float start_x = middle_x - 100.f;
+  const float start_y = middle_y - options_spacing * (lines_num / 2.f);
   
   sf::Text text("You WIN!", _font);
-  text.setFillColor(sf::Color::Magenta);
+  text.setFillColor(sf::Color::Green);
   text.setStyle(sf::Text::Bold);
-  sf::Vector2f text_pos(static_cast<float>(width)/2.f, static_cast<float>(height)/2.f);
+  sf::Vector2f text_pos(start_x, start_y);
   text.setPosition(text_pos);
-   
+
+  const float options_bg_width = 140.f;
+  const float options_bg_height = lines_num * options_spacing - 10.f;
+  sf::RectangleShape background({options_bg_width, options_bg_height});
+  background.setFillColor(sf::Color(119, 136, 153));
+  background.setPosition(start_x, start_y);
+  
+  _window.draw(background);
   _window.draw(text);
 
   _window.popGLStates();
@@ -89,16 +88,30 @@ void GameRendererSFML::render_win()
 
 void GameRendererSFML::render_lose() 
 {
-  _window.pushGLStates();
+  _draw_filled_board();
+  _window.pushGLStates();  
   int width = _window.getSize().x;
   int height = _window.getSize().y;
+  const float middle_x = static_cast<float>(width) / 2.f;
+  const float middle_y = static_cast<float>(height) / 2.f;
+  const float options_spacing = 50.f;
+  const float lines_num = 1.f;
+  const float start_x = middle_x - 100.f;
+  const float start_y = middle_y - options_spacing * (lines_num / 2.f);
   
   sf::Text text("You LOSE!", _font);
-  text.setFillColor(sf::Color::Magenta);
+  text.setFillColor(sf::Color::Red);
   text.setStyle(sf::Text::Bold);
-  sf::Vector2f text_pos(static_cast<float>(width)/2.f, static_cast<float>(height)/2.f);
+  sf::Vector2f text_pos(start_x, start_y);
   text.setPosition(text_pos);
-   
+
+  const float options_bg_width = 140.f;
+  const float options_bg_height = lines_num * options_spacing - 10.f;
+  sf::RectangleShape background({options_bg_width, options_bg_height});
+  background.setFillColor(sf::Color(119, 136, 153));
+  background.setPosition(start_x, start_y);
+  
+  _window.draw(background);
   _window.draw(text);
 
   _window.popGLStates();
@@ -113,7 +126,7 @@ void GameRendererSFML::render_difficulty_selection(const DifficultyLevel& diff_l
   const float middle_y = static_cast<float>(height) / 2.f;
   const float options_spacing = 50.f;
   const float lines_num = 6.f;
-  const float start_x = middle_x - 100.f;
+  const float start_x = middle_x - 150.f;
   const float start_y = middle_y - options_spacing * (lines_num / 2.f);
 
   
@@ -126,7 +139,13 @@ void GameRendererSFML::render_difficulty_selection(const DifficultyLevel& diff_l
   sf::Vector2f text_pos(start_x, start_y);
   text.setPosition(text_pos);
 
-  const float selection_width = 100.f;
+  const float options_bg_width = 300.f;
+  const float options_bg_height = lines_num * options_spacing;
+  sf::RectangleShape background({options_bg_width, options_bg_height});
+  background.setFillColor(sf::Color(119, 136, 153));
+  background.setPosition(start_x, start_y);
+
+  const float selection_width = options_bg_width;
   const float selection_height = options_spacing - 10.f;
   sf::RectangleShape selection({selection_width, selection_height});
   selection.setFillColor(sf::Color::Blue);
@@ -159,6 +178,7 @@ void GameRendererSFML::render_difficulty_selection(const DifficultyLevel& diff_l
     iter++;
   }
 
+  _window.draw(background);
   _window.draw(text);
   _window.draw(selection);
 
@@ -169,36 +189,80 @@ void GameRendererSFML::render_difficulty_selection(const DifficultyLevel& diff_l
     iter++;
   }
 
+  _draw_info(false);
   _window.popGLStates();
 }
 
-void GameRendererSFML::render_ask_start() 
+void GameRendererSFML::render_ask_start(const StartState& state) 
 {
+  _draw_filled_board();
   _window.pushGLStates();
   int width = _window.getSize().x;
   int height = _window.getSize().y;
   const float middle_x = static_cast<float>(width) / 2.f;
   const float middle_y = static_cast<float>(height) / 2.f;
   const float options_spacing = 50.f;
-  const float lines_num = 3.f;
-  const float start_x = middle_x - 100.f;
+  const float lines_num = 4.f;
+  const float start_x = middle_x - 150.f;
   const float start_y = middle_y - options_spacing * (lines_num / 2.f);
+
+  std::vector<std::pair<StartState, sf::Text> > option_vec;
   
   sf::Text text("Do you wish to start?", _font);
-  text.setFillColor(sf::Color::Magenta);
+  text.setFillColor(sf::Color::White);
   text.setStyle(sf::Text::Bold);
-  sf::Vector2f text_pos(static_cast<float>(width)/2.f - 100.f, static_cast<float>(height)/2.f - 100.f);
+  sf::Vector2f text_pos(start_x, start_y);
   text.setPosition(text_pos);
 
-  sf::Text option_text("Click 'S' to start, 'Q' to go back to difficulty selection", _font);
-  option_text.setFillColor(sf::Color::Magenta);
-  option_text.setStyle(sf::Text::Bold);
-  text_pos = sf::Vector2f(static_cast<float>(width)/2.f - 300.f, static_cast<float>(height)/2.f);
-  option_text.setPosition(text_pos); 
+  const float options_bg_width = 300.f;
+  const float options_bg_height = lines_num * options_spacing;
+  sf::RectangleShape background({options_bg_width, options_bg_height});
+  background.setFillColor(sf::Color(119, 136, 153));
+  background.setPosition(start_x, start_y);
 
+  const float selection_width = options_bg_width;
+  const float selection_height = options_spacing - 10.f;
+  sf::RectangleShape selection({selection_width, selection_height});
+  selection.setFillColor(sf::Color::Blue);
+
+  option_vec.emplace_back(StartState::start, sf::Text("Start", _font) );
+  option_vec.emplace_back(StartState::selection_screen, sf::Text("Selection", _font) );
+  option_vec.emplace_back(StartState::quit, sf::Text("Quit", _font) );
+
+  std::vector<std::pair<StartState, sf::Text> >::iterator iter = option_vec.begin();
+  float pos_y = start_y + options_spacing;
+  while (iter != option_vec.end())
+  {
+    sf::Text & elem = iter->second;
+    elem.setStyle(sf::Text::Bold);
+    sf::Vector2f pos(start_x, pos_y);
+    elem.setPosition(pos);
+    pos_y += options_spacing;
+
+    if (state != iter->first)
+    {
+      elem.setFillColor(sf::Color::Blue);
+    }
+    else
+    {
+      selection.setPosition(pos);
+      elem.setFillColor(sf::Color::White);
+    }
+    iter++;
+  }
+
+  _window.draw(background);
   _window.draw(text);
-  _window.draw(option_text);
+  _window.draw(selection);
 
+  iter = option_vec.begin();
+  while(iter != option_vec.end())
+  {
+    _window.draw(iter->second);
+    iter++;
+  }
+
+  _draw_info(false);
   _window.popGLStates();
 }
 
@@ -216,7 +280,7 @@ void GameRendererSFML::render_view(const ViewParams& view)
 void GameRendererSFML::clear()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  _draw_background(_window, sf::Clock().getElapsedTime().asSeconds());
+  _draw_background(_window, _clock.getElapsedTime().asSeconds());
 }
 
 void GameRendererSFML::_draw_background(sf::RenderWindow& window, float timeSec)
@@ -238,61 +302,117 @@ void GameRendererSFML::_draw_background(sf::RenderWindow& window, float timeSec)
             }
         )";
 
-        // Fragment shader (GLSL 1.20) - procedural cosmic look
         const std::string fragSrc = R"(
-            #version 120
-            varying vec2 vUV;
-            uniform vec2 u_resolution;
-            uniform float u_time;
+          #version 120
+          varying vec2 vUV;
 
-            float hash(vec2 p) {
-                return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-            }
+          uniform vec2 u_resolution;
+          uniform float u_time;
 
-            float noise(vec2 p) {
-                vec2 i = floor(p);
-                vec2 f = fract(p);
-                float a = hash(i + vec2(0.0,0.0));
-                float b = hash(i + vec2(1.0,0.0));
-                float c = hash(i + vec2(0.0,1.0));
-                float d = hash(i + vec2(1.0,1.0));
-                vec2 u = f*f*(3.0-2.0*f);
-                return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-            }
+          // ---- Star Nest parameters ----
+          #define iterations 17
+          #define formuparam 0.53
 
-            float fbm(vec2 p) {
-                float v = 0.0;
-                float amp = 0.5;
-                for (int i = 0; i < 5; ++i) {
-                    v += amp * noise(p);
-                    p *= 2.0;
-                    amp *= 0.5;
-                }
-                return v;
-            }
+          #define volsteps 18
+          #define stepsize 0.050
 
-            void main() {
-                vec2 uv = (vUV * u_resolution - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
-                vec2 p = uv * 2.0 + vec2(u_time * 0.03, u_time * 0.01);
+          #define zoom   0.800
+          #define tile   0.850
+          #define speed  0.10 
 
-                float n1 = fbm(p * 1.2);
-                float n2 = fbm(p * 3.0 - vec2(u_time * 0.08));
-                float neb = smoothstep(0.15, 0.8, n1 * 0.6 + n2 * 0.4);
+          #define brightness 0.0015
+          #define darkmatter 0.300
+          #define distfading 0.760
+          #define saturation 0.800
 
-                vec3 col = mix(vec3(0.02, 0.03, 0.08), vec3(0.9, 0.2, 0.6), neb);
+          void main()
+          {
+              // Screen coordinates (-0.5 .. 0.5), aspect corrected
+              vec2 uv = vUV - 0.5;
+              uv.y *= u_resolution.y / u_resolution.x;
 
-                float starNoise = fbm(p * 40.0 + 10.0);
-                float stars = pow(max(0.0, starNoise - 0.85), 6.0);
-                col += vec3(1.0) * stars * 1.5;
+              // Ray direction
+              vec3 dir = vec3(uv * zoom, 1.0);
 
-                float speck = step(0.995, hash(floor(p * 200.0)));
-                col += vec3(1.0) * speck * 0.9;
+              // Time
+              float time = u_time * speed;
 
-                float dist = length(uv);
-                col *= smoothstep(1.2, 0.6, dist);
+              // Camera position
+              vec3 from = vec3(1.0, 0.5, 0.5);
 
-                gl_FragColor = vec4(col, 1.0);
-            }
+              // Fixed camera rotation (no mouse)
+              float a1 = 0.3;
+              float a2 = 0.6;
+
+              mat2 rot1 = mat2(cos(a1), sin(a1), -sin(a1), cos(a1));
+              mat2 rot2 = mat2(cos(a2), sin(a2), -sin(a2), cos(a2));
+
+              dir.xz *= rot1;
+              dir.yz *= rot2;
+
+              vec3 forward = vec3(0.0, 0.0, 1.0);
+              forward.xz *= rot1;
+              forward.yz *= rot2;
+
+              // Move camera forward
+              from += forward * time;
+
+              // Z-aligned sample shifting (temporal stability)
+              float sampleShift = mod(time, stepsize);
+              float zoffset = -sampleShift;
+              sampleShift /= stepsize;
+
+              // Volumetric accumulation
+              float s = 0.1;
+              vec3 col = vec3(0.0);
+
+              for (int r = 0; r < volsteps; r++)
+              {
+                  vec3 p = from + (s + zoffset) * dir;
+
+                  // Tiling fold
+                  p = abs(vec3(tile) - mod(p, vec3(tile * 2.0)));
+
+                  float pa = 0.0;
+                  float a = 0.0;
+
+                  // Fractal iterations
+                  for (int i = 0; i < iterations; i++)
+                  {
+                      p = abs(p) / dot(p, p) - formuparam;
+                      float lenp = length(p);
+                      float d = abs(lenp - pa);
+                      a += (i > 7) ? min(12.0, d) : d;
+                      pa = lenp;
+                  }
+
+                  a *= a * a;
+
+                  float fade = pow(distfading, max(0.0, float(r) - sampleShift));
+
+                  if (r == 0)
+                      fade *= 1.0 - sampleShift;
+                  if (r == volsteps - 1)
+                      fade *= sampleShift;
+
+                  float s1 = s + zoffset;
+
+                  vec3 sampleCol = vec3(
+                      2.0 * s1,
+                      4.0 * s1 * s1,
+                      16.0 * s1 * s1 * s1 * s1
+                  );
+
+                  col += sampleCol * a * brightness * fade;
+
+                  s += stepsize;
+              }
+
+              // Saturation adjustment
+              col = mix(vec3(length(col)), col, saturation);
+
+              gl_FragColor = vec4(col * 0.01, 1.0);
+          }
         )";
 
         // Load shader from memory (SFML will compile it)
@@ -691,4 +811,86 @@ void GameRendererSFML::_draw_board(uint8_t tiles_x, uint8_t tiles_z)
       glVertex3f(-start_x + board_width, board_layer_height, -start_z  + board_height);
 
     glEnd();
+}
+
+void GameRendererSFML::_draw_info(bool game_move_info)
+{
+  int width = _window.getSize().x;
+  int height = _window.getSize().y;
+
+  float lines_num = game_move_info ? 7.f : 3.f;
+  float width_right_offset = game_move_info ? 160.f : 130.f;
+
+  const float options_spacing = 20.f;
+  const float start_x = static_cast<float>(width) - width_right_offset;
+  const float start_y = 0.f;
+  const unsigned int font_size = 14;
+
+  std::vector<sf::Text> info_vec;
+
+  const float options_bg_width = width_right_offset;
+  const float options_bg_height = lines_num * options_spacing;
+  sf::RectangleShape background({options_bg_width, options_bg_height});
+  background.setFillColor(sf::Color(255, 222, 173));
+  background.setPosition(start_x, start_y);
+
+  if (game_move_info)
+  {
+    info_vec.emplace_back(sf::Text("W,A,S,D - MOVE", _font, font_size) );
+    info_vec.emplace_back(sf::Text("F - FLAG / Q - CLICK", _font, font_size) );
+    info_vec.emplace_back(sf::Text("C - SELECTION MENU", _font, font_size) );
+    info_vec.emplace_back(sf::Text("R - RESET", _font, font_size) );
+    info_vec.emplace_back(sf::Text("VIEW CHANGE", _font, font_size) );
+    info_vec.emplace_back(sf::Text("ARROWS & NUMPAD(8,2)", _font, font_size) );
+    info_vec.emplace_back(sf::Text("ESC - QUIT", _font, font_size) );
+  }
+  else
+  {
+    info_vec.emplace_back(sf::Text(" W,S - MOVE", _font, font_size) );
+    info_vec.emplace_back(sf::Text(" ENTER - SELECT", _font, font_size) );
+    info_vec.emplace_back(sf::Text(" ESC - QUIT", _font, font_size) );
+  }
+
+  std::vector<sf::Text>::iterator iter = info_vec.begin();
+  float pos_y = start_y;
+  while (iter != info_vec.end())
+  {
+    sf::Text & elem = *iter;
+    elem.setStyle(sf::Text::Bold);
+    sf::Vector2f pos(start_x, pos_y);
+    elem.setPosition(pos);
+    pos_y += options_spacing;
+    elem.setFillColor(sf::Color(47, 79, 79));
+    iter++;
+  }
+
+  _window.draw(background);
+  iter = info_vec.begin();
+  while(iter != info_vec.end())
+  {
+    _window.draw(*iter);
+    iter++;
+  }
+}
+
+void GameRendererSFML::_draw_filled_board()
+{
+  if (_board_ptr.expired())
+    return;
+
+   std::shared_ptr<IGameBoard> board = _board_ptr.lock();
+  _board_size = board->get_board_size();
+
+  _draw_board(_board_size.x, _board_size.y);
+  _draw_selection(board->get_current_pos());
+
+  for (uint8_t x = 0; x < _board_size.x; x++)
+  {
+    for (uint8_t y = 0; y < _board_size.y; y++)
+    {
+      const Pos pos(y,x);
+      const Tile tile = board->get_tile(pos);
+      _draw_tile(pos, tile);
+    }
+  }
 }
