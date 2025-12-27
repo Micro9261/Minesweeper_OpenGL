@@ -139,7 +139,6 @@ void InputStdin::set_board(const std::weak_ptr<IGameBoard> && board_ptr)
   char input = 'Q';
   do
   {
-    // std::cout << "Type S to start, Q to quit\n";
     input = get_input_safe();
     if (std::islower(input))
     {
