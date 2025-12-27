@@ -6,10 +6,15 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS_DEBUG_INIT "-Wall")
-set(CMAKE_CXX_FLAGS_RELEASE_NIT "-Wall")
+# set(CMAKE_CXX_FLAGS_DEBUG_INIT "-Wall")
+# set(CMAKE_CXX_FLAGS_RELEASE_NIT "-Wall")
 
 include(FetchContent)
+
+set(CMAKE_SYSTEM_VERSION 10.0.19041.0)
+if (MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 # --------------------------------------------------------------------------
 # Save all static libs to Lib/
@@ -24,6 +29,7 @@ set(BUILD_SHARED_LIBS OFF)
 set(SFML_BUILD_EXAMPLES OFF)
 set(SFML_BUILD_TESTS OFF)
 set(SFML_BUILD_DOC OFF)
+set(SFML_USE_SYSTEM_DEPS OFF CACHE BOOL "" FORCE)
 
 FetchContent_Declare(
   SFML
@@ -87,6 +93,7 @@ set(FT_DISABLE_ZLIB ON CACHE BOOL "" FORCE)
 set(FT_DISABLE_BZIP2 ON CACHE BOOL "" FORCE)
 set(FT_DISABLE_PNG ON CACHE BOOL "" FORCE)
 set(FT_DISABLE_HARFBUZZ ON CACHE BOOL "" FORCE)
+set(FT_DISABLE_BROTLI ON CACHE BOOL "" FORCE)
 
 FetchContent_Declare(
     freetype
@@ -178,7 +185,8 @@ FetchCOntent_Declare(
     URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
 )
 
-set( gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+set(gtest_force_shared_crt OFF CACHE BOOL "" FORCE)
+# set( gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 enable_testing()

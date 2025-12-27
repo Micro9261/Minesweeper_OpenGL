@@ -1,9 +1,14 @@
 #include <memory>
 #include <thread>
 #include <chrono>
-#include <SFML2/Window.hpp>
-#include <SFML2/Graphics.hpp>
-#include <SFML2/OpenGL.hpp>
+
+// #include <SFML2/Window.hpp>
+// #include <SFML2/Graphics.hpp>
+// #include <SFML2/OpenGL.hpp>
+#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
+#include <SFML/OpenGL.hpp>
+
 #include <GL/glu.h>
 #include "Game.hpp"
 
@@ -57,7 +62,7 @@ void Game::Start()
     logic_ptr->set_difficulty_level(diff_level);
     logic_ptr->clean();
 
-    render_ptr->render_ask_start();
+    render_ptr->render_ask_start(StartState::waiting);
     bool start = input_ptr->start();
     if (!start)
     {
@@ -92,7 +97,7 @@ void Game::Start()
 
       case Action::reset :
         logic_ptr->clean();
-        render_ptr->render_ask_start();
+        render_ptr->render_ask_start(StartState::waiting);
         start = input_ptr->start();
         if (start)
         {
@@ -126,7 +131,7 @@ void Game::Start()
 
 }
 
-void Game::Start3D()
+void Game::start_3D()
 {
   sf::ContextSettings settings;
   settings.depthBits = 24;
@@ -168,6 +173,11 @@ void Game::Start3D()
   StartState start_state = StartState::start;
   while (window.isOpen())
   {
+    if (input_ptr->reshape())
+    {
+      render_ptr->init();
+    }
+
     render_ptr->clear();
     render_ptr->render_view(view_param);
     switch (win_state)
@@ -196,9 +206,8 @@ void Game::Start3D()
 
       case WindowState::start_waiting:
       {
-        render_ptr->render();
-        render_ptr->render_ask_start();
-        auto [state, enter] = input_ptr->Start3D(start_state);
+        render_ptr->render_ask_start(start_state);
+        auto [state, enter] = input_ptr->start_3D(start_state);
         start_state = state;
         if (enter)
         {
@@ -211,6 +220,7 @@ void Game::Start3D()
 
             case StartState::selection_screen:
               win_state = WindowState::difficulty_selection;
+              start_state = StartState::start;
               break;
 
             case StartState::quit:
@@ -252,7 +262,7 @@ void Game::Start3D()
           break;
 
         case Action::change_difficulty :
-          window.close();
+          win_state =  WindowState::difficulty_selection;
           break;
 
         case Action::reset :
@@ -277,7 +287,7 @@ void Game::Start3D()
           std::thread anim_time(
             [&animation_finished]()
             {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::seconds(2));
             animation_finished = true;
             }
           );

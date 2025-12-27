@@ -5,7 +5,7 @@ class Game final
 public:
   Game();
   void Start();
-  void Start3D();
+  void start_3D();
   ~Game();
 private:
 

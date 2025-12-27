@@ -3,6 +3,6 @@
 int main()
 {
   Game app;
-  app.Start3D();
+  app.start_3D();
   return 0;
 }
