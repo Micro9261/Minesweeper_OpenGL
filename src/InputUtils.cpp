@@ -1,4 +1,4 @@
-#include "interface/IInput3D.hpp"
+#include "interface/IInput.hpp"
 
 StartState& operator--(StartState& oryg)
 {

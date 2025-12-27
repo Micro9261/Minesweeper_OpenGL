@@ -1,14 +1,14 @@
 #include "impl/InputSFML.hpp"
 
 InputSFML::InputSFML(sf::RenderWindow& window)
-  : _window(window)
+  : _window(window), _window_reshaped(false)
 {
   //Nothing
 }
 
 void InputSFML::init()
 {
-  //Nothing
+  _view = _window.getDefaultView();
 }
 void InputSFML::set_board(const std::weak_ptr<IGameBoard> && board_ptr)
 {
@@ -30,6 +30,8 @@ void InputSFML::set_board(const std::weak_ptr<IGameBoard> && board_ptr)
   {
     if (event.type == sf::Event::Closed)
       _window.close();
+    if (event.type == sf::Event::Resized)
+      _reshape_window(event);
 
     if (event.type == sf::Event::KeyPressed)
     {
@@ -93,6 +95,8 @@ void InputSFML::set_board(const std::weak_ptr<IGameBoard> && board_ptr)
   {
     if (event.type == sf::Event::Closed)
       _window.close();
+    if (event.type == sf::Event::Resized)
+      _reshape_window(event);
     
     if (event.type == sf::Event::KeyPressed)
     {
@@ -122,6 +126,8 @@ void InputSFML::set_board(const std::weak_ptr<IGameBoard> && board_ptr)
   {
     if (event.type == sf::Event::Closed)
       _window.close();
+    if (event.type == sf::Event::Resized)
+      _reshape_window(event);
     
     if (event.type == sf::Event::KeyPressed)
     {
@@ -182,6 +188,8 @@ void InputSFML::set_board(const std::weak_ptr<IGameBoard> && board_ptr)
   {
     if (event.type == sf::Event::Closed)
       _window.close();
+    if (event.type == sf::Event::Resized)
+      _reshape_window(event);
 
     if (event.type == sf::Event::KeyPressed)
     {
@@ -196,7 +204,7 @@ void InputSFML::set_board(const std::weak_ptr<IGameBoard> && board_ptr)
   return start;
 }
 
-[[nodiscard]] std::tuple<StartState, bool> InputSFML::Start3D(const StartState& state)
+[[nodiscard]] std::tuple<StartState, bool> InputSFML::start_3D(const StartState& state)
 {
   StartState state_value = state;
   bool enter = false;
@@ -205,6 +213,8 @@ void InputSFML::set_board(const std::weak_ptr<IGameBoard> && board_ptr)
   {
     if (event.type == sf::Event::Closed)
       _window.close();
+    if (event.type == sf::Event::Resized)
+      _reshape_window(event);
 
     if (event.type == sf::Event::KeyPressed)
     {
@@ -254,6 +264,8 @@ void InputSFML::set_board(const std::weak_ptr<IGameBoard> && board_ptr)
   {
     if (event.type == sf::Event::Closed)
       _window.close();
+    if (event.type == sf::Event::Resized)
+      _reshape_window(event);
 
     if (event.type == sf::Event::KeyPressed)
     {
@@ -331,4 +343,23 @@ void InputSFML::set_board(const std::weak_ptr<IGameBoard> && board_ptr)
     }
   }
   return {move, new_params};
+}
+
+[[nodiscard]] bool InputSFML::reshape()
+{
+  bool value = _window_reshaped;
+  _window_reshaped = false;
+  return value;
+}
+
+// Private
+
+void InputSFML::_reshape_window(const sf::Event& event)
+{
+  const float new_width = static_cast<float>(event.size.width);
+  const float new_height = static_cast<float>(event.size.height);
+  _view.setSize({new_width, new_height});
+  _view.setCenter({new_width / 2.f, new_height / 2.f});
+  _window.setView(_view);
+  _window_reshaped = true;
 }

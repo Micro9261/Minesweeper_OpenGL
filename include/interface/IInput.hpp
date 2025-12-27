@@ -3,6 +3,18 @@
 #include "IGameLogic.hpp"
 #include <memory>
 
+enum class StartState
+{
+  start,
+  selection_screen,
+  quit,
+  waiting,
+};
+
+StartState& operator--(StartState& oryg);
+StartState& operator++(StartState& oryg);
+
+
 enum class Action
 {
   Check,

@@ -1,7 +1,9 @@
 #pragma once
 #include "interface/IInput3D.hpp"
-#include <SFML2/Window.hpp>
-#include <SFML2/Graphics.hpp>
+// #include <SFML2/Window.hpp>
+// #include <SFML2/Graphics.hpp>
+#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
 
 class InputSFML final : public IInput3D
 {
@@ -14,13 +16,18 @@ public:
   [[nodiscard]] DifficultyLevel get_difficulty() override;
   [[nodiscard]] bool start() override;
 
-  [[nodiscard]] std::tuple<StartState, bool> Start3D(const StartState& state) override;
+  [[nodiscard]] std::tuple<StartState, bool> start_3D(const StartState& state) override;
   [[nodiscard]] std::tuple<Move, ViewParams> get_input_3D(const ViewParams& params) override;
   [[nodiscard]] std::tuple<DifficultyLevel, ViewParams, bool> get_difficulty_3D(
     const DifficultyLevel& diff_level) override;
+  [[nodiscard]] bool reshape() override;
 
   ~InputSFML() = default;
 private:
   std::weak_ptr<IGameBoard> _board_ptr;
   sf::RenderWindow& _window;
+  sf::View _view;
+  bool _window_reshaped;
+
+  void _reshape_window(const sf::Event& event);
 };
