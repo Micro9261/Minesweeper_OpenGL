@@ -2,6 +2,7 @@
 
 int main()
 {
-    Game app;
-    app.Start();
+  Game app;
+  app.Start3D();
+  return 0;
 }
